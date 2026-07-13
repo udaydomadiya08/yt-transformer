@@ -41,7 +41,11 @@ jobs:
         with:
           name: YTDownloader-${{ runner.os }}
           path: |
-            desktop-app/dist/
+            desktop-app/dist/*.dmg
+            desktop-app/dist/*.exe
+            desktop-app/dist/*.zip
+            desktop-app/dist/*.tar.gz
+            desktop-app/dist/*.AppImage
           if-no-files-found: ignore
 
   release:
