@@ -140,6 +140,20 @@ def _package_macos(dist_dir):
 
     if dmg.exists():
         log(f"DMG: {dmg.resolve()}")
+    # Clean up PyInstaller internals
+    _clean_dist_except(["*.dmg", "*.zip", "*.tar.gz", "*.AppImage", "*.exe"])
+
+def _clean_dist_except(patterns):
+    """Remove loose files in dist/ not matching any pattern (keep only archives)."""
+    dist = Path("dist")
+    if not dist.exists():
+        return
+    import fnmatch
+    for p in dist.iterdir():
+        if p.is_dir() and p.name != APP_NAME:
+            shutil.rmtree(p)
+        elif p.is_file() and not any(fnmatch.fnmatch(p.name, pat) for pat in patterns):
+            p.unlink()
 
 def _package_windows():
     """Create a .zip portable archive."""
@@ -160,6 +174,7 @@ def _package_windows():
                 for f in app_dir.rglob("*"):
                     z.write(f, arcname=f.relative_to(app_dir.parent))
             log(f"Created: {archive}")
+    _clean_dist_except(["*.dmg", "*.zip", "*.tar.gz", "*.AppImage", "*.exe"])
 
 def _package_linux():
     """Create a .tar.gz portable archive."""
@@ -212,6 +227,7 @@ def _package_linux():
             break
     except Exception as e:
         log(f"AppImage skipped: {e}")
+    _clean_dist_except(["*.dmg", "*.zip", "*.tar.gz", "*.AppImage", "*.exe"])
 
 def clean():
     folders = ["build", "dist", "__pycache__"]
