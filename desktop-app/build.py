@@ -149,8 +149,14 @@ def _clean_dist_except(patterns):
     if not dist.exists():
         return
     import fnmatch
+    garbage = {"base_library.zip", "warnings.txt", "PyInstaller"}
     for p in dist.iterdir():
-        if p.is_dir() and p.name != APP_NAME:
+        if p.name in garbage:
+            if p.is_dir():
+                shutil.rmtree(p)
+            else:
+                p.unlink()
+        elif p.is_dir() and p.name != APP_NAME:
             shutil.rmtree(p)
         elif p.is_file() and not any(fnmatch.fnmatch(p.name, pat) for pat in patterns):
             p.unlink()
