@@ -54,6 +54,17 @@ def open_folder(path):
     else:
         subprocess.Popen(["xdg-open", str(Path(p).parent)])
 
+def _detect_browser():
+    browsers = ["chrome", "firefox", "edge", "brave", "opera", "chromium", "vivaldi", "safari"]
+    for b in browsers:
+        try:
+            import yt_dlp
+            yt_dlp.YoutubeDL({"cookiesfrombrowser": (b,)}).extract_info("https://www.youtube.com/watch?v=dQw4w9WgXcQ", download=False)
+            return b
+        except Exception:
+            continue
+    return "chrome"
+
 class FFmpegManager:
     def __init__(self):
         self.app_dir = appdata_dir()
@@ -164,7 +175,7 @@ class DownloadWorker:
         format_sel = "/".join(formats) if formats else "bv*+ba/b"
 
         opts = {
-            "cookiesfrombrowser": ("chrome",),
+            "cookiesfrombrowser": (_detect_browser(),),
             "format": format_sel,
             "outtmpl": outtmpl,
             "ffmpeg_location": ff_path,

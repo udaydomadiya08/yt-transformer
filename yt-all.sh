@@ -50,7 +50,13 @@ done
 # ─── List mode ───
 if [ "$list_only" -eq 1 ]; then
   [ -z "$url" ] && { echo "Usage: $0 --list <url>"; exit 1; }
-  "$YT_DLP" --cookies-from-browser chrome --list-formats "$url"
+  COOKIE_ARG=""
+  for b in chrome firefox edge brave opera chromium vivaldi safari; do
+    if "$YT_DLP" --cookies-from-browser "$b" --dump-json >/dev/null 2>&1 <<< "" 2>/dev/null; then
+      COOKIE_ARG="--cookies-from-browser $b"; break
+    fi
+  done
+  "$YT_DLP" $COOKIE_ARG --list-formats "$url"
   exit 0
 fi
 
@@ -78,7 +84,6 @@ fi
 
 # ─── Build yt-dlp command ───
 yt_args=(
-  --cookies-from-browser chrome
   -f "bv[height<=1080][vcodec^=avc1][ext=mp4]+ba[ext=m4a]"
   --write-auto-subs --sub-langs en --sub-format "vtt"
   --embed-metadata --embed-thumbnail --embed-chapters
@@ -102,10 +107,24 @@ if [ "$split_ch" -eq 1 ]; then
   yt_args=(--split-chapters "${yt_args[@]}")
 fi
 
+# ─── Auto-detect browser for cookies ───
+browsers=("chrome" "firefox" "edge" "brave" "opera" "chromium" "vivaldi" "safari")
+COOKIE_ARG=""
+for b in "${browsers[@]}"; do
+  if "$YT_DLP" --cookies-from-browser "$b" --dump-json >/dev/null 2>&1 <<< "" || [ "$("$YT_DLP" --cookies-from-browser "$b" --help 2>/dev/null; echo $?)" -eq 0 ]; then
+    COOKIE_ARG="--cookies-from-browser $b"
+    echo "==> Using cookies from $b"
+    break
+  fi
+done
+if [ -z "$COOKIE_ARG" ]; then
+  echo "==> No browser cookies found — trying anonymous download"
+fi
+
 echo "==> Downloading..." | tr '\n' ' '
 [ "$sponsor" -eq 1 ] && echo -n " + sponsorblock"
 echo ""
-"$YT_DLP" "${yt_args[@]}"
+"$YT_DLP" $COOKIE_ARG "${yt_args[@]}"
 
 # ─── For split-chapter mode: done (no post-processing) ───
 if [ "$split_ch" -eq 1 ]; then
