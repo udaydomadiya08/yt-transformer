@@ -199,30 +199,66 @@ h1 {
 .desktop-sub {
   color: #888;
   font-size: 0.9rem;
-  margin-bottom: 20px;
+  margin-bottom: 28px;
 }
 
 .dl-cards {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
 .dl-card {
   background: #1a1a2e;
   border: 1px solid #2a2a3e;
-  border-radius: 10px;
-  padding: 14px 28px;
-  color: #e0e0e0;
-  text-decoration: none;
-  font-size: 0.95rem;
-  transition: border-color 0.2s, transform 0.2s;
+  border-radius: 16px;
+  padding: 30px 20px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .dl-card:hover {
-  border-color: #ff6b6b;
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(255, 107, 107, 0.15);
+}
+
+.dl-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.dl-card h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.dl-desc {
+  color: #888;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.dl-size {
+  color: #666;
+  font-size: 0.8rem;
+  margin-bottom: 16px;
+}
+
+.dl-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+
+.dl-btn:hover {
+  opacity: 0.85;
 }
 
 /* Footer */
@@ -248,6 +284,9 @@ footer a:hover {
 @media (max-width: 650px) {
   .feature-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .dl-cards {
+    grid-template-columns: 1fr;
   }
   h1 {
     font-size: 2rem;
