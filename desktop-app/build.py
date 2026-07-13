@@ -149,12 +149,48 @@ def _package_windows():
         log("Run the exe directly or wrap with Inno Setup for an installer.")
 
 def _package_linux():
-    """Create an AppImage."""
+    """Create a .tar.gz portable archive."""
     app_dir = Path("dist") / APP_NAME
     if not app_dir.exists():
         return
-    log(f"Linux build in: {app_dir.resolve()}")
-    log("To create AppImage, use appimagetool or linuxdeploy.")
+    log(f"Packaging Linux build from: {app_dir.resolve()}")
+    import tarfile
+    archive = Path("dist") / f"{APP_NAME}.tar.gz"
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(app_dir, arcname=APP_NAME)
+    log(f"Created: {archive}")
+    # Also try to create AppImage via linuxdeploy if available
+    if shutil.which("linuxdeploy") or Path("/tmp/linuxdeploy").exists():
+        log("linuxdeploy found, creating AppImage...")
+        deploy = shutil.which("linuxdeploy") or "/tmp/linuxdeploy"
+        appdir = Path(f"/tmp/{APP_NAME}.AppDir")
+        if appdir.exists():
+            shutil.rmtree(appdir)
+        # Copy the PyInstaller output into AppDir/usr/bin
+        (appdir / "usr/bin").mkdir(parents=True)
+        for item in app_dir.iterdir():
+            if item.is_dir():
+                shutil.copytree(item, appdir / "usr/bin" / item.name)
+            else:
+                shutil.copy2(item, appdir / "usr/bin" / item.name)
+        # Desktop entry
+        (appdir / "usr/share/applications").mkdir(parents=True)
+        desktop = appdir / "usr/share/applications" / f"{APP_NAME}.desktop"
+        desktop.write_text(f"[Desktop Entry]\nName={APP_NAME}\nExec={APP_NAME}\nType=Application\nCategories=Utility;\n")
+        # Symlink for AppStream
+        (appdir / f"{APP_NAME}.desktop").symlink_to(f"usr/share/applications/{APP_NAME}.desktop")
+        # AppRun
+        apprun = appdir / "AppRun"
+        apprun.write_text("#!/bin/bash\nSELF=\"$(readlink -f \"$0\")\"\nHERE=\"${SELF%/*}\"\nexec \"$HERE/usr/bin/main\" \"$@\"\n")
+        apprun.chmod(0o755)
+        # Run linuxdeploy
+        subprocess.check_call([str(deploy), "--appdir", str(appdir), "--output", "appimage"], timeout=120)
+        # Find the resulting AppImage
+        import glob
+        for f in glob.glob(f"/tmp/{APP_NAME}*.AppImage"):
+            shutil.copy(f, Path("dist") / f"{APP_NAME}.AppImage")
+            log(f"AppImage: dist/{APP_NAME}.AppImage")
+            break
 
 def clean():
     folders = ["build", "dist", "__pycache__"]

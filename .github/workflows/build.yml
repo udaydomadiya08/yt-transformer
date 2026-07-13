@@ -26,6 +26,12 @@ jobs:
           pip install -r desktop-app/requirements.txt
           pip install pyinstaller
 
+      - name: Install linuxdeploy (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          curl -sL "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" -o /tmp/linuxdeploy
+          chmod +x /tmp/linuxdeploy
+
       - name: Build app
         working-directory: desktop-app
         run: python build.py
@@ -54,4 +60,5 @@ jobs:
             **/*.dmg
             **/*.exe
             **/*.AppImage
+            **/*.tar.gz
           generate_release_notes: true
