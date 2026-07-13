@@ -1,9 +1,35 @@
 #!/bin/bash
 set -euo pipefail
 
-YT_DLP="$HOME/.pyenv/versions/3.11.14/bin/yt-dlp"
-OUTDIR="$HOME/Downloads"
-FFMPEG="/opt/homebrew/bin/ffmpeg"
+OUTDIR="${YT_DOWNLOAD_DIR:-$HOME/Downloads}"
+
+# ─── Auto-find or install yt-dlp ───
+YT_DLP="$(command -v yt-dlp || true)"
+if [ -z "$YT_DLP" ]; then
+  echo "==> yt-dlp not found, installing via pip..."
+  python3 -m pip install -q yt-dlp
+  YT_DLP="$(command -v yt-dlp)" || { echo "ERROR: yt-dlp install failed"; exit 1; }
+fi
+
+# ─── Auto-find or download ffmpeg ───
+FFMPEG="$(command -v ffmpeg || true)"
+if [ -z "$FFMPEG" ]; then
+  echo "==> ffmpeg not found, downloading..."
+  case "$(uname -s)" in
+    Darwin)
+      curl -sL "https://evermeet.cx/ffmpeg/ffmpeg/6.1/ffmpeg-6.1.zip" -o /tmp/ffmpeg.zip
+      unzip -o /tmp/ffmpeg.zip -d /tmp/ >/dev/null 2>&1
+      FFMPEG="/tmp/ffmpeg";;
+    Linux)
+      curl -sL "https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz" -o /tmp/ffmpeg.tar.xz
+      tar xf /tmp/ffmpeg.tar.xz -C /tmp/ >/dev/null 2>&1
+      FFMPEG="$(ls /tmp/ffmpeg-*-static/ffmpeg 2>/dev/null || echo '/tmp/ffmpeg')";;
+    *)
+      echo "ERROR: install ffmpeg manually (brew install ffmpeg / apt install ffmpeg)"
+      exit 1;;
+  esac
+  chmod +x "$FFMPEG" 2>/dev/null || true
+fi
 
 # ─── Parse flags ───
 comments=0; split_ch=0; sponsor=0; all_thumbs=0; list_only=0; keep_thumbs=0
@@ -24,7 +50,7 @@ done
 # ─── List mode ───
 if [ "$list_only" -eq 1 ]; then
   [ -z "$url" ] && { echo "Usage: $0 --list <url>"; exit 1; }
-  "$YT_DLP" --cookies-from-browser chrome --remote-components "ejs:github" --list-formats "$url"
+  "$YT_DLP" --cookies-from-browser chrome --list-formats "$url"
   exit 0
 fi
 
@@ -53,7 +79,6 @@ fi
 # ─── Build yt-dlp command ───
 yt_args=(
   --cookies-from-browser chrome
-  --remote-components "ejs:github"
   -f "bv[height<=1080][vcodec^=avc1][ext=mp4]+ba[ext=m4a]"
   --write-auto-subs --sub-langs en --sub-format "vtt"
   --embed-metadata --embed-thumbnail --embed-chapters
