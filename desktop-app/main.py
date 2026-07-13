@@ -17,6 +17,7 @@ import io
 from pathlib import Path
 from PIL import Image
 import requests
+import time
 from datetime import datetime, timezone
 
 ctk.set_appearance_mode("System")
@@ -55,20 +56,35 @@ def open_folder(path):
         subprocess.Popen(["xdg-open", str(Path(p).parent)])
 
 def _detect_browser():
-    cache = Path(appdata_dir()) / "browser_cache"
-    if cache.exists():
-        return cache.read_text().strip()
-    browsers = ["chrome", "firefox", "edge", "brave", "opera", "chromium", "vivaldi", "safari"]
-    for b in browsers:
+    cache_dir = appdata_dir()
+    cache_file = cache_dir / "browser_cache"
+    ts_file = cache_dir / "browser_cache_ts"
+    now = time.time()
+    recheck = 86400
+
+    if cache_file.exists() and ts_file.exists():
+        last = float(ts_file.read_text().strip())
+        if now - last < recheck:
+            val = cache_file.read_text().strip()
+            if val != "none":
+                return val
+            return None
+
+    import yt_dlp
+    for b in ["chrome", "firefox", "edge", "brave", "opera", "chromium", "vivaldi", "safari"]:
         try:
-            import yt_dlp
             yt_dlp.YoutubeDL({"cookiesfrombrowser": (b,)}).extract_info("https://www.youtube.com/watch?v=dQw4w9WgXcQ", download=False)
-            cache.parent.mkdir(parents=True, exist_ok=True)
-            cache.write_text(b)
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            cache_file.write_text(b)
+            ts_file.write_text(str(now))
             return b
         except Exception:
             continue
-    return "chrome"
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_file.write_text("none")
+    ts_file.write_text(str(now))
+    return None
 
 class FFmpegManager:
     def __init__(self):
@@ -179,8 +195,8 @@ class DownloadWorker:
 
         format_sel = "/".join(formats) if formats else "bv*+ba/b"
 
+        browser = _detect_browser()
         opts = {
-            "cookiesfrombrowser": (_detect_browser(),),
             "format": format_sel,
             "outtmpl": outtmpl,
             "ffmpeg_location": ff_path,
@@ -197,6 +213,8 @@ class DownloadWorker:
             "keepvideo": self.opts.get("mp4") and self.opts.get("mp3"),
             "postprocessor_args": {"ffmpeg": ["-y"]},
         }
+        if browser:
+            opts["cookiesfrombrowser"] = (browser,)
 
         if self.opts.get("comments", 0) > 0:
             opts["writecomments"] = True

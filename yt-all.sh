@@ -106,27 +106,37 @@ if [ "$split_ch" -eq 1 ]; then
   yt_args=(--split-chapters "${yt_args[@]}")
 fi
 
-# ─── Auto-detect browser for cookies (cached) ───
+# ─── Auto-detect browser for cookies (cached, re-checks every 24h) ───
 COOKIE_CACHE="$HOME/.cache/ytdl-browser"
+COOKIE_TS="$HOME/.cache/ytdl-browser-ts"
 COOKIE_ARG=""
-if [ -f "$COOKIE_CACHE" ]; then
-  cached=$(cat "$COOKIE_CACHE")
-  if "$YT_DLP" --cookies-from-browser "$cached" --dump-json >/dev/null 2>&1 <<< "" 2>/dev/null; then
-    COOKIE_ARG="--cookies-from-browser $cached"
+now=$(date +%s)
+recheck=86400
+if [ -f "$COOKIE_CACHE" ] && [ -f "$COOKIE_TS" ]; then
+  last=$(cat "$COOKIE_TS" 2>/dev/null || echo 0)
+  elapsed=$((now - last))
+  if [ "$elapsed" -lt "$recheck" ]; then
+    cached=$(cat "$COOKIE_CACHE")
+    if [ "$cached" != "none" ]; then
+      COOKIE_ARG="--cookies-from-browser $cached"
+    fi
   fi
 fi
-if [ -z "$COOKIE_ARG" ]; then
+if [ -z "$COOKIE_ARG" ] && { [ ! -f "$COOKIE_TS" ] || [ $((now - $(cat "$COOKIE_TS" 2>/dev/null || echo 0))) -ge "$recheck" ]; }; then
   for b in chrome firefox edge brave opera chromium vivaldi safari; do
     if "$YT_DLP" --cookies-from-browser "$b" --dump-json >/dev/null 2>&1 <<< "" 2>/dev/null; then
       COOKIE_ARG="--cookies-from-browser $b"
       mkdir -p "$(dirname "$COOKIE_CACHE")"
       echo "$b" > "$COOKIE_CACHE"
+      echo "$now" > "$COOKIE_TS"
       break
     fi
   done
-fi
-if [ -z "$COOKIE_ARG" ]; then
-  echo "==> No browser cookies found — trying anonymous download"
+  if [ -z "$COOKIE_ARG" ]; then
+    mkdir -p "$(dirname "$COOKIE_CACHE")"
+    echo "none" > "$COOKIE_CACHE"
+    echo "$now" > "$COOKIE_TS"
+  fi
 fi
 
 echo "==> Downloading..." | tr '\n' ' '
