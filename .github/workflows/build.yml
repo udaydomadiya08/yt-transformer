@@ -59,6 +59,7 @@ jobs:
           files: |
             **/*.dmg
             **/*.exe
+            **/*.zip
             **/*.AppImage
             **/*.tar.gz
           generate_release_notes: true

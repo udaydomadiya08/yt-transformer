@@ -48,7 +48,7 @@ def build():
         separator = "--onedir"
     elif PLATFORM == "Windows":
         icon = "icon.ico" if Path("icon.ico").exists() else None
-        separator = "--onefile"
+        separator = "--onedir"
     else:
         icon = "icon.png" if Path("icon.png").exists() else None
         separator = "--onedir"
@@ -142,11 +142,24 @@ def _package_macos(dist_dir):
         log(f"DMG: {dmg.resolve()}")
 
 def _package_windows():
-    """Create an installer or just show where the exe is."""
+    """Create a .zip portable archive."""
+    import zipfile
     exe = Path("dist") / f"{APP_NAME}.exe"
     if exe.exists():
         log(f"EXE: {exe.resolve()}")
-        log("Run the exe directly or wrap with Inno Setup for an installer.")
+        archive = Path("dist") / f"{APP_NAME}.zip"
+        with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
+            z.write(exe, arcname=exe.name)
+        log(f"Created: {archive}")
+    else:
+        # onedir mode: zip the whole directory
+        app_dir = Path("dist") / APP_NAME
+        if app_dir.exists():
+            archive = Path("dist") / f"{APP_NAME}.zip"
+            with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
+                for f in app_dir.rglob("*"):
+                    z.write(f, arcname=f.relative_to(app_dir.parent))
+            log(f"Created: {archive}")
 
 def _package_linux():
     """Create a .tar.gz portable archive."""
@@ -154,43 +167,51 @@ def _package_linux():
     if not app_dir.exists():
         return
     log(f"Packaging Linux build from: {app_dir.resolve()}")
-    import tarfile
+    import tarfile, struct, zlib
     archive = Path("dist") / f"{APP_NAME}.tar.gz"
     with tarfile.open(archive, "w:gz") as tar:
         tar.add(app_dir, arcname=APP_NAME)
     log(f"Created: {archive}")
-    # Also try to create AppImage via linuxdeploy if available
-    if shutil.which("linuxdeploy") or Path("/tmp/linuxdeploy").exists():
-        log("linuxdeploy found, creating AppImage...")
-        deploy = shutil.which("linuxdeploy") or "/tmp/linuxdeploy"
-        appdir = Path(f"/tmp/{APP_NAME}.AppDir")
-        if appdir.exists():
-            shutil.rmtree(appdir)
-        # Copy the PyInstaller output into AppDir/usr/bin
-        (appdir / "usr/bin").mkdir(parents=True)
-        for item in app_dir.iterdir():
-            if item.is_dir():
-                shutil.copytree(item, appdir / "usr/bin" / item.name)
-            else:
-                shutil.copy2(item, appdir / "usr/bin" / item.name)
-        # Desktop entry
-        (appdir / "usr/share/applications").mkdir(parents=True)
-        desktop = appdir / "usr/share/applications" / f"{APP_NAME}.desktop"
-        desktop.write_text(f"[Desktop Entry]\nName={APP_NAME}\nExec={APP_NAME}\nType=Application\nCategories=Utility;\n")
-        # Symlink for AppStream
-        (appdir / f"{APP_NAME}.desktop").symlink_to(f"usr/share/applications/{APP_NAME}.desktop")
-        # AppRun
-        apprun = appdir / "AppRun"
-        apprun.write_text("#!/bin/bash\nSELF=\"$(readlink -f \"$0\")\"\nHERE=\"${SELF%/*}\"\nexec \"$HERE/usr/bin/main\" \"$@\"\n")
-        apprun.chmod(0o755)
-        # Run linuxdeploy
-        subprocess.check_call([str(deploy), "--appdir", str(appdir), "--output", "appimage"], timeout=120)
-        # Find the resulting AppImage
+
+    # Best-effort AppImage via linuxdeploy
+    deploy = shutil.which("linuxdeploy") or (Path("/tmp/linuxdeploy") if Path("/tmp/linuxdeploy").exists() else None)
+    if not deploy:
+        return
+    log("linuxdeploy found, creating AppImage...")
+    appdir = Path(f"/tmp/{APP_NAME}.AppDir")
+    if appdir.exists():
+        shutil.rmtree(appdir)
+    (appdir / "usr/bin").mkdir(parents=True)
+    for item in app_dir.iterdir():
+        if item.is_dir():
+            shutil.copytree(item, appdir / "usr/bin" / item.name)
+        else:
+            shutil.copy2(item, appdir / "usr/bin" / item.name)
+    # Desktop entry with Icon
+    (appdir / "usr/share/applications").mkdir(parents=True)
+    desktop = appdir / "usr/share/applications" / f"{APP_NAME}.desktop"
+    desktop.write_text(f"[Desktop Entry]\nName={APP_NAME}\nExec={APP_NAME}\nType=Application\nIcon={APP_NAME}\nCategories=Utility;\n")
+    (appdir / f"{APP_NAME}.desktop").symlink_to(f"usr/share/applications/{APP_NAME}.desktop")
+    # Minimal 1x1 PNG icon so linuxdeploy doesn't fail
+    icon_dir = appdir / "usr/share/icons/hicolor/256x256/apps"
+    icon_dir.mkdir(parents=True)
+    # 1x1 red PNG (valid minimal PNG)
+    raw = b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR' + struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0) + struct.pack('>I', 0) + b'IDAT' + struct.pack('>I', zlib.crc32(b'IDAT' + zlib.compress(b'\x00\xff\x00\x00\xff')) & 0xffffffff) + b'IEND' + struct.pack('>I', zlib.crc32(b'IEND') & 0xffffffff)
+    (icon_dir / f"{APP_NAME}.png").write_bytes(raw)
+    # AppRun
+    apprun = appdir / "AppRun"
+    apprun.write_text("#!/bin/bash\nSELF=\"$(readlink -f \"$0\")\"\nHERE=\"${SELF%/*}\"\nexec \"$HERE/usr/bin/main\" \"$@\"\n")
+    apprun.chmod(0o755)
+    # Run linuxdeploy (best-effort)
+    try:
+        subprocess.check_call([str(deploy), "--appdir", str(appdir), "--output", "appimage"], timeout=180)
         import glob
         for f in glob.glob(f"/tmp/{APP_NAME}*.AppImage"):
             shutil.copy(f, Path("dist") / f"{APP_NAME}.AppImage")
             log(f"AppImage: dist/{APP_NAME}.AppImage")
             break
+    except Exception as e:
+        log(f"AppImage skipped: {e}")
 
 def clean():
     folders = ["build", "dist", "__pycache__"]
