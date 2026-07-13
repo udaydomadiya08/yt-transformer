@@ -10,48 +10,32 @@
   <header>
     <div class="container">
       <h1>YT Downloader</h1>
-      <p class="subtitle">Download YouTube videos in one click — MP4, MP3, subtitles, metadata & comments</p>
-      <div class="version-badge">v1.0</div>
+      <p class="subtitle">Download YouTube videos in one command — MP4, MP3, subtitles, metadata & comments</p>
     </div>
   </header>
 
   <main class="container">
-    <section class="download-cards">
-      <div class="card mac">
-        <div class="icon">🍎</div>
-        <h2>macOS</h2>
-        <p class="desc">Apple Silicon & Intel</p>
-        <p class="size">~123 MB</p>
-        <a href="https://github.com/udaydomadiya08/ytdownloader/releases/latest/download/YTDownloader.dmg" class="dl-btn">Download .dmg</a>
-        <p class="alt">drag to Applications folder</p>
-      </div>
 
-      <div class="card windows">
-        <div class="icon">🪟</div>
-        <h2>Windows</h2>
-        <p class="desc">Windows 10 & 11</p>
-        <p class="size">~80 MB</p>
-        <a href="https://github.com/udaydomadiya08/ytdownloader/releases/latest/download/YTDownloader.exe" class="dl-btn">Download .exe</a>
-        <p class="alt">portable, no install needed</p>
+    <section class="one-liner">
+      <p class="one-liner-label">Quick start — one line, any OS:</p>
+      <div class="code-block">
+        <code>bash &lt;(curl -s /dl) "https://youtu.be/..."</code>
+        <button class="copy-btn" onclick="copyCode()">Copy</button>
       </div>
-
-      <div class="card linux">
-        <div class="icon">🐧</div>
-        <h2>Linux</h2>
-        <p class="desc">Ubuntu, Debian, Fedora</p>
-        <p class="size">~90 MB</p>
-        <a href="https://github.com/udaydomadiya08/ytdownloader/releases/latest/download/YTDownloader.AppImage" class="dl-btn">Download AppImage</a>
-        <p class="alt">chmod +x & run</p>
+      <div class="one-liner-requirements">
+        <span>Requires <a href="https://python.org">Python 3.8+</a> &amp; <a href="https://ffmpeg.org">ffmpeg</a></span>
+        <span class="sep">&middot;</span>
+        <span>Mac: <code>brew install python ffmpeg</code></span>
       </div>
     </section>
 
     <section class="features">
-      <h2>What you get</h2>
+      <h2>Outputs</h2>
       <div class="feature-grid">
         <div class="feature">
           <span class="emoji">🎬</span>
           <h3>MP4 Video</h3>
-          <p>1080p / 720p / 480p / 360p</p>
+          <p>1080p &middot; 720p &middot; 480p &middot; 360p &mdash; H.264</p>
         </div>
         <div class="feature">
           <span class="emoji">🎵</span>
@@ -60,42 +44,81 @@
         </div>
         <div class="feature">
           <span class="emoji">📝</span>
-          <h3>Subtitles</h3>
-          <p>SRT with timestamps</p>
+          <h3>SRT Subtitles</h3>
+          <p>Auto-generated with timestamps</p>
         </div>
         <div class="feature">
           <span class="emoji">📄</span>
           <h3>Metadata</h3>
-          <p>Title, tags, chapters, heatmap</p>
+          <p>Title, tags, chapters, heatmap, description</p>
         </div>
         <div class="feature">
           <span class="emoji">💬</span>
           <h3>Comments</h3>
-          <p>Top comments included</p>
+          <p>Top N comments bundled with every download</p>
         </div>
         <div class="feature">
           <span class="emoji">⚡</span>
-          <h3>Fast</h3>
-          <p>Local ffmpeg, no re-download</p>
+          <h3>Playlists</h3>
+          <p>Auto-detects playlists &amp; splits chapters</p>
         </div>
       </div>
     </section>
 
-    <section class="how-to">
-      <h2>How to use</h2>
-      <ol>
-        <li><strong>Paste</strong> a YouTube URL</li>
-        <li><strong>Choose</strong> what to download</li>
-        <li><strong>Click</strong> Download</li>
-        <li><strong>Done</strong> — files appear in your Downloads folder</li>
-      </ol>
+    <section class="install-methods">
+      <h2>CLI — full control</h2>
+      <div class="method">
+        <h3>One-shot (no download)</h3>
+        <p>Runs directly, nothing saved to disk:</p>
+        <div class="code-block small">
+          <code>bash &lt;(curl -s /dl) "URL"</code>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="method">
+        <h3>Install globally</h3>
+        <p>Download once, use anywhere:</p>
+        <div class="code-block small">
+          <code>sudo curl -sL /dl -o /usr/local/bin/ytdl && sudo chmod +x /usr/local/bin/ytdl</code>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <p style="color:#888;font-size:0.85rem;margin-top:6px;">Then just run: <code>ytdl "URL"</code></p>
+      </div>
+    </section>
+
+    <section class="desktop-app">
+      <h2>Desktop app</h2>
+      <p class="desktop-sub">Prefer a GUI? 90–120 MB (bundles everything).</p>
+      <div class="dl-cards">
+        <a href="https://github.com/udaydomadiya08/ytdownloader/releases/latest/download/YTDownloader.dmg" class="dl-card">🍎 macOS</a>
+        <a href="https://github.com/udaydomadiya08/ytdownloader/releases/latest/download/YTDownloader.exe" class="dl-card">🪟 Windows</a>
+        <a href="https://github.com/udaydomadiya08/ytdownloader/releases/latest/download/YTDownloader.AppImage" class="dl-card">🐧 Linux</a>
+      </div>
     </section>
   </main>
 
   <footer>
-    <div class="container">
-      <p><a href="https://github.com/udaydomadiya08/ytdownloader">GitHub</a> &middot; Free & Open Source</p>
-    </div>
+    <p><a href="https://github.com/udaydomadiya08/ytdownloader">GitHub</a> &middot; Free & Open Source &middot; No servers, runs on your machine</p>
   </footer>
+
+  <script>
+    function copyCode(el) {
+      const code = (el || document.querySelector('.copy-btn')).parentElement.querySelector('code');
+      const text = code.textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        el.textContent = 'Copied!';
+        setTimeout(() => el.textContent = 'Copy', 1500);
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        el.textContent = 'Copied!';
+        setTimeout(() => el.textContent = 'Copy', 1500);
+      });
+    }
+  </script>
 </body>
 </html>

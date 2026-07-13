@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/dl",
+      "destination": "https://raw.githubusercontent.com/udaydomadiya08/ytdownloader/main/yt-all.sh"
+    }
+  ]
+}
