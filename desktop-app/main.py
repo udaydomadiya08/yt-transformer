@@ -55,11 +55,16 @@ def open_folder(path):
         subprocess.Popen(["xdg-open", str(Path(p).parent)])
 
 def _detect_browser():
+    cache = Path(appdata_dir()) / "browser_cache"
+    if cache.exists():
+        return cache.read_text().strip()
     browsers = ["chrome", "firefox", "edge", "brave", "opera", "chromium", "vivaldi", "safari"]
     for b in browsers:
         try:
             import yt_dlp
             yt_dlp.YoutubeDL({"cookiesfrombrowser": (b,)}).extract_info("https://www.youtube.com/watch?v=dQw4w9WgXcQ", download=False)
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            cache.write_text(b)
             return b
         except Exception:
             continue

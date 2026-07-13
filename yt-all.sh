@@ -50,13 +50,12 @@ done
 # ─── List mode ───
 if [ "$list_only" -eq 1 ]; then
   [ -z "$url" ] && { echo "Usage: $0 --list <url>"; exit 1; }
-  COOKIE_ARG=""
-  for b in chrome firefox edge brave opera chromium vivaldi safari; do
-    if "$YT_DLP" --cookies-from-browser "$b" --dump-json >/dev/null 2>&1 <<< "" 2>/dev/null; then
-      COOKIE_ARG="--cookies-from-browser $b"; break
-    fi
-  done
-  "$YT_DLP" $COOKIE_ARG --list-formats "$url"
+  COOKIE_ARG="$(cat "$HOME/.cache/ytdl-browser" 2>/dev/null || true)"
+  if [ -n "$COOKIE_ARG" ]; then
+    "$YT_DLP" --cookies-from-browser "$COOKIE_ARG" --list-formats "$url"
+  else
+    "$YT_DLP" --list-formats "$url"
+  fi
   exit 0
 fi
 
@@ -107,16 +106,25 @@ if [ "$split_ch" -eq 1 ]; then
   yt_args=(--split-chapters "${yt_args[@]}")
 fi
 
-# ─── Auto-detect browser for cookies ───
-browsers=("chrome" "firefox" "edge" "brave" "opera" "chromium" "vivaldi" "safari")
+# ─── Auto-detect browser for cookies (cached) ───
+COOKIE_CACHE="$HOME/.cache/ytdl-browser"
 COOKIE_ARG=""
-for b in "${browsers[@]}"; do
-  if "$YT_DLP" --cookies-from-browser "$b" --dump-json >/dev/null 2>&1 <<< "" || [ "$("$YT_DLP" --cookies-from-browser "$b" --help 2>/dev/null; echo $?)" -eq 0 ]; then
-    COOKIE_ARG="--cookies-from-browser $b"
-    echo "==> Using cookies from $b"
-    break
+if [ -f "$COOKIE_CACHE" ]; then
+  cached=$(cat "$COOKIE_CACHE")
+  if "$YT_DLP" --cookies-from-browser "$cached" --dump-json >/dev/null 2>&1 <<< "" 2>/dev/null; then
+    COOKIE_ARG="--cookies-from-browser $cached"
   fi
-done
+fi
+if [ -z "$COOKIE_ARG" ]; then
+  for b in chrome firefox edge brave opera chromium vivaldi safari; do
+    if "$YT_DLP" --cookies-from-browser "$b" --dump-json >/dev/null 2>&1 <<< "" 2>/dev/null; then
+      COOKIE_ARG="--cookies-from-browser $b"
+      mkdir -p "$(dirname "$COOKIE_CACHE")"
+      echo "$b" > "$COOKIE_CACHE"
+      break
+    fi
+  done
+fi
 if [ -z "$COOKIE_ARG" ]; then
   echo "==> No browser cookies found — trying anonymous download"
 fi
