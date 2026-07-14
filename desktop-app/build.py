@@ -101,8 +101,9 @@ def _clean_dist():
     dist = Path("dist")
     if not dist.exists():
         return
+    keep = (".zip", ".dmg", ".AppImage", ".exe")
     for p in dist.iterdir():
-        if p.suffix in (".zip", ".tar.gz", ".dmg", ".AppImage", ".exe"):
+        if p.suffix in keep or p.name.endswith(".tar.gz"):
             continue
         if p.is_dir():
             shutil.rmtree(p)
