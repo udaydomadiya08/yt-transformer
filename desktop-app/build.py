@@ -1,27 +1,21 @@
 #!/usr/bin/env python3
 """
-Build script: packages the app as standalone executable.
+Build script: packages the app as standalone executables.
 Usage:
-  python build.py          # detect platform, build
-  python build.py --dmg   # macOS: create DMG after build
-  python build.py --clean  # remove build artifacts
+  python build.py           # build GUI + CLI, package as zip/tar.gz
+  python build.py --cli-only  # build CLI only
+  python build.py --clean     # remove build artifacts
 """
-import sys
-import os
-import shutil
-import platform
-import subprocess
+import sys, shutil, platform, subprocess, zipfile, tarfile
 from pathlib import Path
 
 APP_NAME = "YTTransformer"
-MAIN_SCRIPT = "main.py"
-
+GUI_SCRIPT = "main.py"
+CLI_SCRIPT = "cli.py"
 PLATFORM = platform.system()
 ARCH = platform.machine()
-IS_ARM = ARCH in ("arm64", "aarch64")
 
-def log(msg):
-    print(f"[build] {msg}")
+def log(msg): print(f"[build] {msg}")
 
 def check_deps():
     try:
@@ -35,312 +29,122 @@ def check_deps():
         log("Installing dependencies...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
 
-def build():
-    check_deps()
-    log(f"Building {APP_NAME} for {PLATFORM} ({ARCH})...")
+def _hidden_imports():
+    pkgs = ["customtkinter", "yt_dlp", "PIL", "PIL._tkinter_finder", "requests",
+            "charset_normalizer", "moviepy", "moviepy.editor", "moviepy.audio.fx.all",
+            "edge_tts", "google", "google.genai"]
+    modules = ["engine", "engine.searcher", "engine.clipper",
+               "brain", "brain.director", "brain.matcher",
+               "composer", "composer.mixer", "composer.assembler", "composer.renderer", "composer.subtitler",
+               "utils", "utils.config", "utils.cleanup", "utils.cookies", "pipeline"]
+    result = []
+    for p in pkgs:
+        result += ["--hidden-import", p]
+    for m in modules:
+        result += ["--hidden-import", m]
+    return result
 
-    name = APP_NAME
-    icon = None
-    separator = "--onedir"
-
-    if PLATFORM == "Darwin":
-        icon = "YTDownloader.icns" if Path("YTDownloader.icns").exists() else ("icon.icns" if Path("icon.icns").exists() else None)
-        separator = "--onedir"
-    elif PLATFORM == "Windows":
-        icon = "icon.ico" if Path("icon.ico").exists() else None
-        separator = "--onedir"
-    else:
-        icon = "icon.png" if Path("icon.png").exists() else None
-        separator = "--onedir"
-
-    hidden = [
-        "--hidden-import", "customtkinter",
-        "--hidden-import", "yt_dlp",
-        "--hidden-import", "PIL",
-        "--hidden-import", "PIL._tkinter_finder",
-        "--hidden-import", "requests",
-        "--hidden-import", "charset_normalizer",
-        "--hidden-import", "moviepy",
-        "--hidden-import", "moviepy.editor",
-        "--hidden-import", "moviepy.audio.fx.all",
-        "--hidden-import", "edge_tts",
-        "--hidden-import", "google",
-        "--hidden-import", "google.genai",
-        "--hidden-import", "engine",
-        "--hidden-import", "engine.searcher",
-        "--hidden-import", "engine.clipper",
-        "--hidden-import", "brain",
-        "--hidden-import", "brain.director",
-        "--hidden-import", "brain.matcher",
-        "--hidden-import", "composer",
-        "--hidden-import", "composer.mixer",
-        "--hidden-import", "composer.assembler",
-        "--hidden-import", "composer.renderer",
-        "--hidden-import", "composer.subtitler",
-        "--hidden-import", "utils",
-        "--hidden-import", "utils.config",
-        "--hidden-import", "utils.cleanup",
-        "--hidden-import", "pipeline",
-    ]
-    data = [
-        "--add-data", f"requirements.txt{';' if PLATFORM == 'Windows' else ':'}.",
-    ]
-    pkg_dirs = ["engine", "brain", "composer", "utils"]
-    for pkg in pkg_dirs:
+def _data_dirs():
+    result = []
+    sep = ";" if PLATFORM == "Windows" else ":"
+    result += ["--add-data", f"requirements.txt{sep}."]
+    for pkg in ["engine", "brain", "composer", "utils"]:
         pkg_path = Path(pkg)
         if pkg_path.is_dir():
-            sep = ";" if PLATFORM == "Windows" else ":"
-            data += ["--add-data", f"{pkg}{sep}{pkg}"]
+            result += ["--add-data", f"{pkg}{sep}{pkg}"]
+    return result
 
-    for entry in [(MAIN_SCRIPT, name), ("cli.py", f"{name}-cli")]:
-        upx = shutil.which("upx")
-    cmd = [
-            sys.executable, "-m", "PyInstaller",
-            "--name", entry[1],
-            "--noconfirm",
-            "--clean",
-            separator,
-        ]
+def _pyinstaller(script, name, windowed=False):
+    check_deps()
+    upx = shutil.which("upx")
+    cmd = [sys.executable, "-m", "PyInstaller", "--name", name,
+           "--noconfirm", "--clean", "--onedir"]
+    if PLATFORM == "Darwin" and windowed:
+        cmd += ["--windowed"]
     if upx:
         cmd += ["--upx-dir", str(Path(upx).parent)]
-        if PLATFORM == "Darwin" and entry[0] == MAIN_SCRIPT:
-            cmd += ["--windowed"]
-        cmd += hidden + data
-        if icon and entry[0] == MAIN_SCRIPT:
-            cmd += ["--icon", icon]
-        cmd.append(entry[0])
-
-        log(f"Building {entry[1]}...")
-        subprocess.check_call(cmd)
-
-    log("Build complete!")
-
-    dist_dir = Path("dist") / name
-    if dist_dir.exists():
-        log(f"Output: {dist_dir.resolve()}")
-        if PLATFORM == "Darwin":
-            app_path = dist_dir.with_suffix(".app")
-            if app_path.exists():
-                log(f"App bundle: {app_path.resolve()}")
-
-    # Package for platform
+    cmd += _hidden_imports() + _data_dirs()
+    icon = None
     if PLATFORM == "Darwin":
-        _package_macos(dist_dir)
+        icon = "icon.icns" if Path("icon.icns").exists() else None
     elif PLATFORM == "Windows":
-        _package_windows()
+        icon = "icon.ico" if Path("icon.ico").exists() else None
     else:
-        _package_linux()
+        icon = "icon.png" if Path("icon.png").exists() else None
+    if icon and windowed:
+        cmd += ["--icon", icon]
+    cmd.append(script)
+    log(f"PyInstaller: {name}")
+    subprocess.check_call(cmd)
 
-def _package_macos(dist_dir):
-    """Create a .dmg from the .app bundle."""
-    dmg = Path("dist") / f"{APP_NAME}.dmg"
-    if dmg.exists():
-        dmg.unlink()
-
-    app_path = Path("dist") / f"{APP_NAME}.app"
-    if not app_path.exists():
-        log("No .app found, skipping DMG")
-        return
-
-    # Try create-dmg if available, else use hdiutil
-    if shutil.which("create-dmg"):
-        log("Creating DMG with create-dmg...")
-        subprocess.check_call([
-            "create-dmg",
-            "--volname", APP_NAME,
-            "--window-pos", "200", "120",
-            "--window-size", "600", "400",
-            "--icon-size", "100",
-            f"--app-drop-link", "400", "200",
-            str(dmg),
-            str(app_path),
-        ])
+def _package_dir(src_dir, archive_name):
+    """Zip (Windows) or tar.gz (others) a directory into dist/."""
+    dist = Path("dist")
+    dist.mkdir(parents=True, exist_ok=True)
+    if not src_dir.exists():
+        log(f"  SKIP: {src_dir} not found")
+        return None
+    if PLATFORM == "Windows":
+        archive = dist / f"{archive_name}.zip"
+        with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
+            for f in src_dir.rglob("*"):
+                if f.is_file():
+                    z.write(f, arcname=f.relative_to(src_dir.parent))
     else:
-        log("Using hdiutil to create DMG...")
-        tmp_dir = Path("/tmp") / APP_NAME
-        if tmp_dir.exists():
-            shutil.rmtree(tmp_dir)
-        tmp_dir.mkdir(parents=True)
-        shutil.copytree(app_path, tmp_dir / f"{APP_NAME}.app")
-        subprocess.check_call([
-            "hdiutil", "create", "-volname", APP_NAME,
-            "-srcfolder", str(tmp_dir),
-            "-ov", "-format", "UDZO",
-            str(dmg),
-        ])
-        shutil.rmtree(tmp_dir)
+        archive = dist / f"{archive_name}.tar.gz"
+        with tarfile.open(archive, "w:gz") as tar:
+            tar.add(src_dir, arcname=src_dir.name)
+    log(f"  Package: {archive} ({archive.stat().st_size / 1024 / 1024:.0f} MB)")
+    return archive
 
-    if dmg.exists():
-        log(f"DMG: {dmg.resolve()}")
-    # Clean up PyInstaller internals
-    _clean_dist_except(["*.dmg", "*.zip", "*.tar.gz", "*.AppImage", "*.exe"])
-
-def _clean_dist_except(patterns):
-    """Remove loose files in dist/ not matching any pattern (keep only archives)."""
+def _clean_dist():
     dist = Path("dist")
     if not dist.exists():
         return
-    import fnmatch
-    garbage = {"base_library.zip", "warnings.txt", "PyInstaller"}
     for p in dist.iterdir():
-        if p.name in garbage:
-            if p.is_dir():
-                shutil.rmtree(p)
-            else:
-                p.unlink()
-        elif p.is_dir() and p.name != APP_NAME:
+        if p.suffix in (".zip", ".tar.gz", ".dmg", ".AppImage", ".exe"):
+            continue
+        if p.is_dir():
             shutil.rmtree(p)
-        elif p.is_file() and not any(fnmatch.fnmatch(p.name, pat) for pat in patterns):
+        else:
             p.unlink()
 
-def _package_windows():
-    """Create a .zip portable archive."""
-    import zipfile
-    exe = Path("dist") / f"{APP_NAME}.exe"
-    if exe.exists():
-        log(f"EXE: {exe.resolve()}")
-        archive = Path("dist") / f"{APP_NAME}.zip"
-        with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
-            z.write(exe, arcname=exe.name)
-        log(f"Created: {archive}")
+def build():
+    log(f"Building {APP_NAME} for {PLATFORM} ({ARCH})...")
+
+    # Build GUI
+    _pyinstaller(GUI_SCRIPT, APP_NAME, windowed=True)
+    gui_dir = Path("dist") / APP_NAME
+    if PLATFORM == "Darwin":
+        gui_dir = Path("dist") / f"{APP_NAME}.app"
+        _package_dir(gui_dir, f"{APP_NAME}-macOS")
+    elif PLATFORM == "Windows":
+        _package_dir(gui_dir, f"{APP_NAME}-Windows")
     else:
-        # onedir mode: zip the whole directory
-        app_dir = Path("dist") / APP_NAME
-        if app_dir.exists():
-            archive = Path("dist") / f"{APP_NAME}.zip"
-            with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
-                for f in app_dir.rglob("*"):
-                    z.write(f, arcname=f.relative_to(app_dir.parent))
-            log(f"Created: {archive}")
-    _clean_dist_except(["*.dmg", "*.zip", "*.tar.gz", "*.AppImage", "*.exe"])
+        _package_dir(gui_dir, f"{APP_NAME}-Linux")
 
-def _package_linux():
-    """Create a .tar.gz portable archive."""
-    app_dir = Path("dist") / APP_NAME
-    if not app_dir.exists():
-        return
-    log(f"Packaging Linux build from: {app_dir.resolve()}")
-    import tarfile, struct, zlib
-    archive = Path("dist") / f"{APP_NAME}.tar.gz"
-    with tarfile.open(archive, "w:gz") as tar:
-        tar.add(app_dir, arcname=APP_NAME)
-    log(f"Created: {archive}")
+    # Build CLI
+    _pyinstaller(CLI_SCRIPT, f"{APP_NAME}-cli")
+    cli_dir = Path("dist") / f"{APP_NAME}-cli"
+    _package_dir(cli_dir, f"{APP_NAME}-cli")
 
-    # Best-effort AppImage via linuxdeploy
-    deploy = shutil.which("linuxdeploy") or (Path("/tmp/linuxdeploy") if Path("/tmp/linuxdeploy").exists() else None)
-    if not deploy:
-        return
-    log("linuxdeploy found, creating AppImage...")
-    appdir = Path(f"/tmp/{APP_NAME}.AppDir")
-    if appdir.exists():
-        shutil.rmtree(appdir)
-    (appdir / "usr/bin").mkdir(parents=True)
-    for item in app_dir.iterdir():
-        if item.is_dir():
-            shutil.copytree(item, appdir / "usr/bin" / item.name)
-        else:
-            shutil.copy2(item, appdir / "usr/bin" / item.name)
-    # Desktop entry with Icon
-    (appdir / "usr/share/applications").mkdir(parents=True)
-    desktop = appdir / "usr/share/applications" / f"{APP_NAME}.desktop"
-    desktop.write_text(f"[Desktop Entry]\nName={APP_NAME}\nExec={APP_NAME}\nType=Application\nIcon={APP_NAME}\nCategories=Utility;\n")
-    (appdir / f"{APP_NAME}.desktop").symlink_to(f"usr/share/applications/{APP_NAME}.desktop")
-    # Minimal 1x1 PNG icon so linuxdeploy doesn't fail
-    icon_dir = appdir / "usr/share/icons/hicolor/256x256/apps"
-    icon_dir.mkdir(parents=True)
-    # 1x1 red PNG (valid minimal PNG)
-    raw = b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR' + struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0) + struct.pack('>I', 0) + b'IDAT' + struct.pack('>I', zlib.crc32(b'IDAT' + zlib.compress(b'\x00\xff\x00\x00\xff')) & 0xffffffff) + b'IEND' + struct.pack('>I', zlib.crc32(b'IEND') & 0xffffffff)
-    (icon_dir / f"{APP_NAME}.png").write_bytes(raw)
-    # AppRun
-    apprun = appdir / "AppRun"
-    apprun.write_text("#!/bin/bash\nSELF=\"$(readlink -f \"$0\")\"\nHERE=\"${SELF%/*}\"\nexec \"$HERE/usr/bin/main\" \"$@\"\n")
-    apprun.chmod(0o755)
-    # Run linuxdeploy (best-effort)
-    try:
-        subprocess.check_call([str(deploy), "--appdir", str(appdir), "--output", "appimage"], timeout=180)
-        import glob
-        for f in glob.glob(f"/tmp/{APP_NAME}*.AppImage"):
-            shutil.copy(f, Path("dist") / f"{APP_NAME}.AppImage")
-            log(f"AppImage: dist/{APP_NAME}.AppImage")
-            break
-    except Exception as e:
-        log(f"AppImage skipped: {e}")
-    _clean_dist_except(["*.dmg", "*.zip", "*.tar.gz", "*.AppImage", "*.exe"])
+    _clean_dist()
+    log("Build complete!")
 
-def _build_cli_only():
-    check_deps()
-    log(f"Building CLI binary for {PLATFORM} ({ARCH})...")
-    hidden = [
-        "--hidden-import", "customtkinter",
-        "--hidden-import", "yt_dlp",
-        "--hidden-import", "PIL",
-        "--hidden-import", "PIL._tkinter_finder",
-        "--hidden-import", "requests",
-        "--hidden-import", "charset_normalizer",
-        "--hidden-import", "moviepy",
-        "--hidden-import", "moviepy.editor",
-        "--hidden-import", "moviepy.audio.fx.all",
-        "--hidden-import", "edge_tts",
-        "--hidden-import", "google",
-        "--hidden-import", "google.genai",
-        "--hidden-import", "engine",
-        "--hidden-import", "engine.searcher",
-        "--hidden-import", "engine.clipper",
-        "--hidden-import", "brain",
-        "--hidden-import", "brain.director",
-        "--hidden-import", "brain.matcher",
-        "--hidden-import", "composer",
-        "--hidden-import", "composer.mixer",
-        "--hidden-import", "composer.assembler",
-        "--hidden-import", "composer.renderer",
-        "--hidden-import", "composer.subtitler",
-        "--hidden-import", "utils",
-        "--hidden-import", "utils.config",
-        "--hidden-import", "utils.cleanup",
-        "--hidden-import", "utils.cookies",
-        "--hidden-import", "pipeline",
-    ]
-    data = ["--add-data", f"requirements.txt{';' if PLATFORM == 'Windows' else ':'}."]
-    pkg_dirs = ["engine", "brain", "composer", "utils"]
-    for pkg in pkg_dirs:
-        pkg_path = Path(pkg)
-        if pkg_path.is_dir():
-            sep = ";" if PLATFORM == "Windows" else ":"
-            data += ["--add-data", f"{pkg}{sep}{pkg}"]
-
-    upx = shutil.which("upx")
-    name = f"{APP_NAME}-cli"
-    cmd = [
-        sys.executable, "-m", "PyInstaller",
-        "--name", name,
-        "--noconfirm", "--clean", "--onedir",
-    ]
-    if upx:
-        cmd += ["--upx-dir", str(Path(upx).parent)]
-    cmd += hidden + data + ["cli.py"]
-
-    subprocess.check_call(cmd)
-    log(f"CLI binary: dist/{name}/")
+def build_cli_only():
+    _pyinstaller(CLI_SCRIPT, f"{APP_NAME}-cli")
+    cli_dir = Path("dist") / f"{APP_NAME}-cli"
+    _package_dir(cli_dir, f"{APP_NAME}-cli")
+    _clean_dist()
+    log("CLI build complete!")
 
 def clean():
-    folders = ["build", "dist", "__pycache__"]
-    files = ["*.spec"]
-    for f in folders:
+    for f in ["build", "dist", "__pycache__"]:
         p = Path(f)
-        if p.exists():
-            shutil.rmtree(p)
-            log(f"Removed {f}")
-    for pattern in files:
-        for p in Path(".").glob(pattern):
-            p.unlink()
-            log(f"Removed {p}")
+        if p.exists(): shutil.rmtree(p); log(f"Removed {f}")
+    for p in Path(".").glob("*.spec"): p.unlink(); log(f"Removed {p}")
 
 if __name__ == "__main__":
-    if "--clean" in sys.argv:
-        clean()
-    elif "--cli-only" in sys.argv:
-        _build_cli_only()
-    else:
-        build()
-        if "--dmg" in sys.argv and PLATFORM == "Darwin":
-            pass  # already done in build()
+    if "--clean" in sys.argv: clean()
+    elif "--cli-only" in sys.argv: build_cli_only()
+    else: build()

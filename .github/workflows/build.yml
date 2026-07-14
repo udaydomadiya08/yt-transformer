@@ -61,12 +61,8 @@ jobs:
         with:
           name: YTTransformer-${{ runner.os }}
           path: |
-            desktop-app/dist/*.dmg
-            desktop-app/dist/*.exe
             desktop-app/dist/*.zip
             desktop-app/dist/*.tar.gz
-            desktop-app/dist/*.AppImage
-            desktop-app/dist/*-cli*
           if-no-files-found: ignore
 
   release:
@@ -79,13 +75,9 @@ jobs:
           pattern: YTTransformer-*
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v2
         with:
           files: |
-            **/*.dmg
-            **/*.exe
-            **/*.zip
-            **/*.AppImage
-            **/*.tar.gz
-            **/*-cli*
+            *.zip
+            *.tar.gz
           generate_release_notes: true
