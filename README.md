@@ -30,6 +30,33 @@ CLI: [macOS](https://github.com/udaydomadiya08/yt-transformer/releases/latest/do
 
 Python 3.11, MoviePy 1.0.3, yt-dlp, google-genai, Edge TTS, CustomTkinter, PyInstaller
 
+## CLI
+
+Download the CLI binary for your OS from the release page, then:
+
+```bash
+# Quick demo (no API key needed)
+./YTTransformer-cli --demo
+
+# Generate a real video
+./YTTransformer-cli "quantum computing" --orientation vertical --api-key "YOUR_KEY"
+
+# Use env var instead of --api-key
+export GEMINI_API_KEY="YOUR_KEY"
+./YTTransformer-cli "your topic" --orientation horizontal
+
+# Options
+./YTTransformer-cli --help
+```
+
+If you want to run from source instead:
+
+```bash
+cd desktop-app
+pip install -r requirements.txt
+python cli.py "your topic" --api-key "$GEMINI_API_KEY"
+```
+
 ## Building from source
 
 ```bash

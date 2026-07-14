@@ -402,6 +402,28 @@ footer a:hover {
   margin-top: 10px;
 }
 
+.cli-usage-box {
+  margin-top: 20px;
+  text-align: left;
+  background: #15152a;
+  border: 1px solid #2a2a3e;
+  border-radius: 12px;
+  padding: 16px 20px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cli-usage-box h4 {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  color: #aaa;
+}
+
+.cli-usage-box .dl-code {
+  margin: 4px 0;
+}
+
 .alt {
   margin-top: 8px;
   font-size: 0.82rem;
