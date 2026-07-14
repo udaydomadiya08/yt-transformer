@@ -115,18 +115,16 @@ def build():
     # Build GUI
     _pyinstaller(GUI_SCRIPT, APP_NAME, windowed=True)
     gui_dir = Path("dist") / APP_NAME
+    suffix = {"Darwin": "macOS", "Windows": "Windows"}.get(PLATFORM, "Linux")
     if PLATFORM == "Darwin":
         gui_dir = Path("dist") / f"{APP_NAME}.app"
-        _package_dir(gui_dir, f"{APP_NAME}-macOS")
-    elif PLATFORM == "Windows":
-        _package_dir(gui_dir, f"{APP_NAME}-Windows")
-    else:
-        _package_dir(gui_dir, f"{APP_NAME}-Linux")
+    _package_dir(gui_dir, f"{APP_NAME}-{suffix}")
 
     # Build CLI
     _pyinstaller(CLI_SCRIPT, f"{APP_NAME}-cli")
     cli_dir = Path("dist") / f"{APP_NAME}-cli"
-    _package_dir(cli_dir, f"{APP_NAME}-cli")
+    cli_suffix = {"Darwin": "macOS", "Windows": "Windows"}.get(PLATFORM, "Linux")
+    _package_dir(cli_dir, f"{APP_NAME}-cli-{cli_suffix}")
 
     _clean_dist()
     log("Build complete!")
@@ -134,7 +132,8 @@ def build():
 def build_cli_only():
     _pyinstaller(CLI_SCRIPT, f"{APP_NAME}-cli")
     cli_dir = Path("dist") / f"{APP_NAME}-cli"
-    _package_dir(cli_dir, f"{APP_NAME}-cli")
+    suffix = {"Darwin": "macOS", "Windows": "Windows"}.get(PLATFORM, "Linux")
+    _package_dir(cli_dir, f"{APP_NAME}-cli-{suffix}")
     _clean_dist()
     log("CLI build complete!")
 
