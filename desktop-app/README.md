@@ -1,37 +1,26 @@
-# YT Downloader — Desktop App
+# YTTransformer Desktop App
 
-## macOS
+Cross-platform desktop app for AI-powered video creation from YouTube clips.
 
-- **App**: `dist/YTDownloader.app` (93MB)
-- **Installer**: `dist/YTDownloader.dmg` (123MB)
-- Open the DMG, drag YTDownloader.app to Applications
+## Build
 
-## Windows
-
-Build on a Windows machine:
-```cmd
-pip install -r requirements.txt
-pip install pyinstaller
-python build.py
-```
-Output: `dist/YTDownloader.exe`
-
-## Linux
-
-Build on Linux:
 ```bash
 pip install -r requirements.txt
 pip install pyinstaller
 python build.py
 ```
-Output: `dist/YTDownloader/`
 
-## First run
+Output: `dist/` — platform archives.
 
-The app auto-downloads ffmpeg (~50MB) on first use if not found on your system.
+## CLI
 
-## Requirements
+```bash
+python cli.py "your topic" --orientation vertical --api-key "$KEY"
+python cli.py --demo
+```
 
-- Python 3.9+
-- Chrome browser (for cookies)
-- Internet connection
+## Dev
+
+```bash
+python main.py  # launch GUI
+```

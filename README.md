@@ -1,74 +1,45 @@
-# yt-all.sh
+# YTTransformer
 
-One command to download everything from any YouTube video.
+AI-powered video creation from YouTube clips. Enter a topic, Gemini generates a script, matching clips are extracted, and a new video is rendered with narration, audio mixing, and word-level subtitles. All in a cross-platform desktop app.
 
-## Requirements
+## Download
 
-- **yt-dlp** (Python 3.11) at `~/.pyenv/versions/3.11.14/bin/yt-dlp`
-- **ffmpeg** at `/opt/homebrew/bin/ffmpeg`
-- **Deno** (JS runtime for YouTube challenge solving)
-- **Chrome** browser (for cookies)
+[macOS (56 MB)](https://github.com/udaydomadiya08/yt-transformer/releases/latest/download/YTTransformer-macOS.tar.gz) · [Windows (77 MB)](https://github.com/udaydomadiya08/yt-transformer/releases/latest/download/YTTransformer-Windows.zip) · [Linux (94 MB)](https://github.com/udaydomadiya08/yt-transformer/releases/latest/download/YTTransformer-Linux.tar.gz)
 
-## Usage
-
-```
-bash yt-all.sh <url> [options]
-```
-
-### Options
-
-| Flag | What it does |
-|---|---|
-| *(none)* | MP4 + MP3 + SRT + metadata |
-| `--all` | + top 50 comments |
-| `--comments N` | + top N comments |
-| `--sponsorblock` | mark sponsor/intro/outro chapters |
-| `--split` | split into per-chapter files |
-| `--all-thumbnails` | download all thumbnail sizes |
-| `--keep-thumbnails` | keep thumbnail image files |
-| `--list` | only list available formats (no download) |
-| *(playlist URL)* | auto-downloads all videos |
-
-### Examples
-
-```bash
-# Single video — everything
-bash yt-all.sh "https://youtu.be/VIDEO_ID"
-
-# With top 100 comments
-bash yt-all.sh "https://youtu.be/VIDEO_ID" --comments 100
-
-# With sponsorblock segments
-bash yt-all.sh "https://youtu.be/VIDEO_ID" --sponsorblock
-
-# Split into chapters
-bash yt-all.sh "https://youtu.be/VIDEO_ID" --split
-
-# Full playlist
-bash yt-all.sh "https://youtube.com/playlist?list=PLAYLIST_ID"
-
-# Just check available formats
-bash yt-all.sh "https://youtu.be/VIDEO_ID" --list
-```
-
-## Output (`~/Downloads/`)
-
-| File | Content |
-|---|---|
-| `{id}.mp4` | 1080p H.264 video (metadata, thumbnail, chapters embedded) |
-| `{id}.mp3` | 320kbps audio (extracted locally via ffmpeg, no 2nd download) |
-| `{id}.srt` | Transcript with timestamps (`00:00:00,000 --> 00:00:03,120`) |
-| `{id}.meta.txt` | Title, channel, stats, description, tags, chapters, heatmap, comments |
-| `{playlist}/` | Subfolder for playlists, one file per video |
-
-### meta.txt fields
-
-Title, channel, subscriber count, views, likes, comment count, duration, upload date, published timestamp, live status, age restriction, license, category, availability, location, selected format details (resolution, codec, fps, bitrate), chapter list, sponsorblock segments, most-replayed heatmap, tags, full description, top comments (with like counts).
+CLI: [macOS](https://github.com/udaydomadiya08/yt-transformer/releases/latest/download/YTTransformer-cli-macOS.tar.gz) · [Windows](https://github.com/udaydomadiya08/yt-transformer/releases/latest/download/YTTransformer-cli-Windows.zip) · [Linux](https://github.com/udaydomadiya08/yt-transformer/releases/latest/download/YTTransformer-cli-Linux.tar.gz)
 
 ## How it works
 
-1. **yt-dlp** downloads best 1080p H.264 video + AAC audio, merges into MP4
-2. **Metadata** (title, thumbnail, chapters) embedded into MP4
-3. **MP3** extracted locally via ffmpeg (no second network download)
-4. **VTT** auto-captions downloaded and converted to SRT with timestamps
-5. **info.json** parsed into readable meta.txt (auto-generated captions, comments, chapters, heatmap)
+1. Enter a topic or description
+2. Gemini generates a script with per-scene configuration (search query, narration, audio mix, transitions, subtitles)
+3. YouTube search finds clips matching the narration via transcript timestamps
+4. 3-4 sec segments downloaded (download-sections first, fallback to full + ffmpeg trim)
+5. Edge TTS narration generated, mixed with original audio and optional background music
+6. Vantix-style word-level subtitles applied (yellow passive + green active highlighting)
+7. Scenes assembled with transitions and rendered as H.264/AAC
+
+## Features
+
+- **3 tabs**: Download (MP4/MP3/SRT/Meta from any YouTube URL), Create (AI video generation), Settings (API key, output dir, resolution)
+- **Orientations**: vertical (1080×1920, ≤58s), horizontal (1920×1080, ≤120s), square (1080×1080, ≤88s)
+- **Cookie cache**: auto-detects browser cookies (24h disk cache), no rate limiting
+- **UPX compressed**: builds reduced from ~140 MB to 56-94 MB
+- **CLI mode**: `yttransformer --topic "quantum computing" --demo`
+
+## Tech stack
+
+Python 3.11, MoviePy 1.0.3, yt-dlp, google-genai, Edge TTS, CustomTkinter, PyInstaller
+
+## Building from source
+
+```bash
+cd desktop-app
+pip install -r requirements.txt
+pip install pyinstaller
+python build.py           # GUI + CLI
+python build.py --cli-only # CLI only
+```
+
+## License
+
+MIT
