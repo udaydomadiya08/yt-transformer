@@ -93,13 +93,16 @@ def build():
             data += ["--add-data", f"{pkg}{sep}{pkg}"]
 
     for entry in [(MAIN_SCRIPT, name), ("cli.py", f"{name}-cli")]:
-        cmd = [
+        upx = shutil.which("upx")
+    cmd = [
             sys.executable, "-m", "PyInstaller",
             "--name", entry[1],
             "--noconfirm",
             "--clean",
             separator,
         ]
+    if upx:
+        cmd += ["--upx-dir", str(Path(upx).parent)]
         if PLATFORM == "Darwin" and entry[0] == MAIN_SCRIPT:
             cmd += ["--windowed"]
         cmd += hidden + data
@@ -305,12 +308,16 @@ def _build_cli_only():
             sep = ";" if PLATFORM == "Windows" else ":"
             data += ["--add-data", f"{pkg}{sep}{pkg}"]
 
+    upx = shutil.which("upx")
     name = f"{APP_NAME}-cli"
     cmd = [
         sys.executable, "-m", "PyInstaller",
         "--name", name,
         "--noconfirm", "--clean", "--onedir",
-    ] + hidden + data + ["cli.py"]
+    ]
+    if upx:
+        cmd += ["--upx-dir", str(Path(upx).parent)]
+    cmd += hidden + data + ["cli.py"]
 
     subprocess.check_call(cmd)
     log(f"CLI binary: dist/{name}/")

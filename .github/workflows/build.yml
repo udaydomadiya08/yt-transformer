@@ -32,6 +32,18 @@ jobs:
           curl -sL "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" -o /tmp/linuxdeploy
           chmod +x /tmp/linuxdeploy
 
+      - name: Install UPX
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            brew install upx
+          elif [ "${{ runner.os }}" = "Windows" ]; then
+            curl -sL "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-win64.zip" -o /tmp/upx.zip
+            unzip -o /tmp/upx.zip -d /tmp/upx
+            echo "/tmp/upx/upx-4.2.4-win64" >> $GITHUB_PATH
+          else
+            sudo apt-get install -y upx-ucl
+          fi
+
       - name: Build app
         working-directory: desktop-app
         run: python build.py
