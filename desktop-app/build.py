@@ -92,22 +92,24 @@ def build():
             sep = ";" if PLATFORM == "Windows" else ":"
             data += ["--add-data", f"{pkg}{sep}{pkg}"]
 
-    cmd = [
-        sys.executable, "-m", "PyInstaller",
-        "--name", name,
-        "--noconfirm",
-        "--clean",
-        separator,
-    ]
-    if PLATFORM == "Darwin":
-        cmd += ["--windowed"]
-    cmd += hidden + data
-    if icon:
-        cmd += ["--icon", icon]
-    cmd.append(MAIN_SCRIPT)
+    for entry in [(MAIN_SCRIPT, name), ("cli.py", f"{name}-cli")]:
+        cmd = [
+            sys.executable, "-m", "PyInstaller",
+            "--name", entry[1],
+            "--noconfirm",
+            "--clean",
+            separator,
+        ]
+        if PLATFORM == "Darwin" and entry[0] == MAIN_SCRIPT:
+            cmd += ["--windowed"]
+        cmd += hidden + data
+        if icon and entry[0] == MAIN_SCRIPT:
+            cmd += ["--icon", icon]
+        cmd.append(entry[0])
 
-    log("Running PyInstaller...")
-    subprocess.check_call(cmd)
+        log(f"Building {entry[1]}...")
+        subprocess.check_call(cmd)
+
     log("Build complete!")
 
     dist_dir = Path("dist") / name
@@ -262,6 +264,57 @@ def _package_linux():
         log(f"AppImage skipped: {e}")
     _clean_dist_except(["*.dmg", "*.zip", "*.tar.gz", "*.AppImage", "*.exe"])
 
+def _build_cli_only():
+    check_deps()
+    log(f"Building CLI binary for {PLATFORM} ({ARCH})...")
+    hidden = [
+        "--hidden-import", "customtkinter",
+        "--hidden-import", "yt_dlp",
+        "--hidden-import", "PIL",
+        "--hidden-import", "PIL._tkinter_finder",
+        "--hidden-import", "requests",
+        "--hidden-import", "charset_normalizer",
+        "--hidden-import", "moviepy",
+        "--hidden-import", "moviepy.editor",
+        "--hidden-import", "moviepy.audio.fx.all",
+        "--hidden-import", "edge_tts",
+        "--hidden-import", "google",
+        "--hidden-import", "google.genai",
+        "--hidden-import", "engine",
+        "--hidden-import", "engine.searcher",
+        "--hidden-import", "engine.clipper",
+        "--hidden-import", "brain",
+        "--hidden-import", "brain.director",
+        "--hidden-import", "brain.matcher",
+        "--hidden-import", "composer",
+        "--hidden-import", "composer.mixer",
+        "--hidden-import", "composer.assembler",
+        "--hidden-import", "composer.renderer",
+        "--hidden-import", "composer.subtitler",
+        "--hidden-import", "utils",
+        "--hidden-import", "utils.config",
+        "--hidden-import", "utils.cleanup",
+        "--hidden-import", "utils.cookies",
+        "--hidden-import", "pipeline",
+    ]
+    data = ["--add-data", f"requirements.txt{';' if PLATFORM == 'Windows' else ':'}."]
+    pkg_dirs = ["engine", "brain", "composer", "utils"]
+    for pkg in pkg_dirs:
+        pkg_path = Path(pkg)
+        if pkg_path.is_dir():
+            sep = ";" if PLATFORM == "Windows" else ":"
+            data += ["--add-data", f"{pkg}{sep}{pkg}"]
+
+    name = f"{APP_NAME}-cli"
+    cmd = [
+        sys.executable, "-m", "PyInstaller",
+        "--name", name,
+        "--noconfirm", "--clean", "--onedir",
+    ] + hidden + data + ["cli.py"]
+
+    subprocess.check_call(cmd)
+    log(f"CLI binary: dist/{name}/")
+
 def clean():
     folders = ["build", "dist", "__pycache__"]
     files = ["*.spec"]
@@ -278,6 +331,8 @@ def clean():
 if __name__ == "__main__":
     if "--clean" in sys.argv:
         clean()
+    elif "--cli-only" in sys.argv:
+        _build_cli_only()
     else:
         build()
         if "--dmg" in sys.argv and PLATFORM == "Darwin":

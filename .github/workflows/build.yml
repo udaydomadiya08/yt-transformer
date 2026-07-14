@@ -36,6 +36,10 @@ jobs:
         working-directory: desktop-app
         run: python build.py
 
+      - name: Build CLI binary
+        working-directory: desktop-app
+        run: python build.py --cli-only
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -46,6 +50,7 @@ jobs:
             desktop-app/dist/*.zip
             desktop-app/dist/*.tar.gz
             desktop-app/dist/*.AppImage
+            desktop-app/dist/*-cli*
           if-no-files-found: ignore
 
   release:
@@ -66,4 +71,5 @@ jobs:
             **/*.zip
             **/*.AppImage
             **/*.tar.gz
+            **/*-cli*
           generate_release_notes: true
