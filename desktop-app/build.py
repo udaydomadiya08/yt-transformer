@@ -13,7 +13,7 @@ import platform
 import subprocess
 from pathlib import Path
 
-APP_NAME = "YTDownloader"
+APP_NAME = "YTTransformer"
 MAIN_SCRIPT = "main.py"
 
 PLATFORM = platform.system()
@@ -60,10 +60,37 @@ def build():
         "--hidden-import", "PIL._tkinter_finder",
         "--hidden-import", "requests",
         "--hidden-import", "charset_normalizer",
+        "--hidden-import", "moviepy",
+        "--hidden-import", "moviepy.editor",
+        "--hidden-import", "moviepy.audio.fx.all",
+        "--hidden-import", "edge_tts",
+        "--hidden-import", "google",
+        "--hidden-import", "google.genai",
+        "--hidden-import", "engine",
+        "--hidden-import", "engine.searcher",
+        "--hidden-import", "engine.clipper",
+        "--hidden-import", "brain",
+        "--hidden-import", "brain.director",
+        "--hidden-import", "brain.matcher",
+        "--hidden-import", "composer",
+        "--hidden-import", "composer.mixer",
+        "--hidden-import", "composer.assembler",
+        "--hidden-import", "composer.renderer",
+        "--hidden-import", "composer.subtitler",
+        "--hidden-import", "utils",
+        "--hidden-import", "utils.config",
+        "--hidden-import", "utils.cleanup",
+        "--hidden-import", "pipeline",
     ]
     data = [
         "--add-data", f"requirements.txt{';' if PLATFORM == 'Windows' else ':'}.",
     ]
+    pkg_dirs = ["engine", "brain", "composer", "utils"]
+    for pkg in pkg_dirs:
+        pkg_path = Path(pkg)
+        if pkg_path.is_dir():
+            sep = ";" if PLATFORM == "Windows" else ":"
+            data += ["--add-data", f"{pkg}{sep}{pkg}"]
 
     cmd = [
         sys.executable, "-m", "PyInstaller",

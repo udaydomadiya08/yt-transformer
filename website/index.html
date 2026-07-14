@@ -3,141 +3,135 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YT Downloader</title>
+  <title>YTTransformer</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <div class="container">
-      <h1>YT Downloader</h1>
-      <p class="subtitle">Download YouTube videos in one command — MP4, MP3, subtitles, metadata & comments</p>
+      <h1>YTTransformer</h1>
+      <p class="subtitle">AI-powered video creation from YouTube clips — download, transform, remix, and generate new content with Gemini intelligence</p>
     </div>
   </header>
 
   <main class="container">
 
-    <section class="one-liner">
-      <p class="one-liner-label">Quick start — one line, any OS:</p>
-      <div class="code-block">
-        <code>bash &lt;(curl -s /dl) "https://youtu.be/..."</code>
-        <button class="copy-btn" onclick="copyCode()">Copy</button>
-      </div>
-      <div class="one-liner-requirements">
-        <span>Requires <a href="https://python.org">Python 3.8+</a> &amp; <a href="https://ffmpeg.org">ffmpeg</a></span>
-        <span class="sep">&middot;</span>
-        <span>Mac: <code>brew install python ffmpeg</code></span>
-      </div>
-    </section>
-
     <section class="features">
-      <h2>Outputs</h2>
+      <h2>Capabilities</h2>
       <div class="feature-grid">
         <div class="feature">
+          <span class="emoji">🤖</span>
+          <h3>AI Scripting</h3>
+          <p>Gemini generates narration & per-scene permutations</p>
+        </div>
+        <div class="feature">
           <span class="emoji">🎬</span>
-          <h3>MP4 Video</h3>
-          <p>1080p &middot; 720p &middot; 480p &middot; 360p &mdash; H.264</p>
+          <h3>Clip Extraction</h3>
+          <p>3-4 sec segments synced to narration via transcript matching</p>
         </div>
         <div class="feature">
-          <span class="emoji">🎵</span>
-          <h3>MP3 Audio</h3>
-          <p>320kbps or 128kbps</p>
+          <span class="emoji">🔊</span>
+          <h3>Audio Mixing</h3>
+          <p>Original + AI narration + music — dynamic volume per track</p>
         </div>
         <div class="feature">
-          <span class="emoji">📝</span>
-          <h3>SRT Subtitles</h3>
-          <p>Auto-generated with timestamps</p>
+          <span class="emoji">🎨</span>
+          <h3>Permutations</h3>
+          <p>7-dimension config: clip/image, audio stems, transitions, treatment</p>
         </div>
         <div class="feature">
-          <span class="emoji">📄</span>
-          <h3>Metadata</h3>
-          <p>Title, tags, chapters, heatmap, description</p>
+          <span class="emoji">📥</span>
+          <h3>Downloader</h3>
+          <p>MP4/MP3/SRT/Metadata/Comments — full YT downloader built-in</p>
         </div>
         <div class="feature">
-          <span class="emoji">💬</span>
-          <h3>Comments</h3>
-          <p>Top N comments bundled with every download</p>
+          <span class="emoji">🖥️</span>
+          <h3>Cross-Platform</h3>
+          <p>macOS, Windows, Linux — DMG, EXE/Portable, AppImage</p>
         </div>
-        <div class="feature">
-          <span class="emoji">⚡</span>
-          <h3>Playlists</h3>
-          <p>Auto-detects playlists &amp; splits chapters</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="install-methods">
-      <h2>CLI — full control</h2>
-      <div class="method">
-        <h3>One-shot (no download)</h3>
-        <p>Runs directly, nothing saved to disk:</p>
-        <div class="code-block small">
-          <code>bash &lt;(curl -s /dl) "URL"</code>
-          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-        </div>
-      </div>
-      <div class="method">
-        <h3>Install globally</h3>
-        <p>Download once, use anywhere:</p>
-        <div class="code-block small">
-          <code>sudo curl -sL /dl -o /usr/local/bin/ytdl && sudo chmod +x /usr/local/bin/ytdl</code>
-          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-        </div>
-        <p style="color:#888;font-size:0.85rem;margin-top:6px;">Then just run: <code>ytdl "URL"</code></p>
       </div>
     </section>
 
     <section class="desktop-app">
       <h2>Desktop app</h2>
-      <p class="desktop-sub">Prefer a GUI? 25–68 MB (Python + yt-dlp + ffmpeg bundled).</p>
+      <p class="desktop-sub">GUI with Gemini API integration. ~25–68 MB (Python + yt-dlp + ffmpeg + MoviePy bundled).</p>
       <div class="dl-cards">
         <div class="dl-card">
           <div class="dl-icon">🍎</div>
           <h3>macOS</h3>
           <p class="dl-desc">Apple Silicon & Intel</p>
           <p class="dl-size">~68 MB</p>
-          <a href="https://github.com/udaydomadiya08/ytdownloader/releases/latest/download/YTDownloader.dmg" class="dl-btn">Download .dmg</a>
+          <a href="https://github.com/udaydomadiya08/yt-transformer/releases/latest/download/YTTransformer.dmg" class="dl-btn">Download .dmg</a>
         </div>
         <div class="dl-card">
           <div class="dl-icon">🪟</div>
           <h3>Windows</h3>
           <p class="dl-desc">Windows 10 & 11</p>
           <p class="dl-size">~25 MB</p>
-          <a href="https://github.com/udaydomadiya08/ytdownloader/releases/latest/download/YTDownloader.zip" class="dl-btn">Download .zip</a>
+          <a href="https://github.com/udaydomadiya08/yt-transformer/releases/latest/download/YTTransformer.zip" class="dl-btn">Download .zip</a>
         </div>
         <div class="dl-card">
           <div class="dl-icon">🐧</div>
           <h3>Linux</h3>
           <p class="dl-desc">Ubuntu, Debian, Fedora</p>
           <p class="dl-size">~38 MB</p>
-          <a href="https://github.com/udaydomadiya08/ytdownloader/releases/latest/download/YTDownloader.AppImage" class="dl-btn">Download AppImage</a>
-          <p class="alt">or <a href="https://github.com/udaydomadiya08/ytdownloader/releases/latest/download/YTDownloader.tar.gz">.tar.gz</a> (no install)</p>
+          <a href="https://github.com/udaydomadiya08/yt-transformer/releases/latest/download/YTTransformer.AppImage" class="dl-btn">Download AppImage</a>
+          <p class="alt">or <a href="https://github.com/udaydomadiya08/yt-transformer/releases/latest/download/YTTransformer.tar.gz">.tar.gz</a> (no install)</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-it-works">
+      <h2>How video creation works</h2>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <p>Enter a topic or describe the video you want</p>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <p>Gemini AI generates a script with per-scene permutations</p>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <p>Smart search finds matching YouTube clips with precise timestamps</p>
+        </div>
+        <div class="step">
+          <span class="step-num">4</span>
+          <p>Clips downloaded as 3-4 sec segments (never full videos)</p>
+        </div>
+        <div class="step">
+          <span class="step-num">5</span>
+          <p>AI narration + original audio + music mixed dynamically</p>
+        </div>
+        <div class="step">
+          <span class="step-num">6</span>
+          <p>Final video rendered with transitions — ready for YouTube</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="info">
+      <h2>Configuration</h2>
+      <div class="info-grid">
+        <div class="info-card">
+          <h3>Gemini API Key</h3>
+          <p>Saved locally in your system — never sent anywhere. 2-3 API calls per video.</p>
+        </div>
+        <div class="info-card">
+          <h3>Output</h3>
+          <p>Custom output directory. Temp files cleaned automatically after render.</p>
+        </div>
+        <div class="info-card">
+          <h3>Quality</h3>
+          <p>Up to 1080p H.264 video, 320kbps AAC audio. Same HD quality as yt-dlp.</p>
         </div>
       </div>
     </section>
   </main>
 
   <footer>
-    <p><a href="https://github.com/udaydomadiya08/ytdownloader">GitHub</a> &middot; Free & Open Source &middot; No servers, runs on your machine</p>
+    <p><a href="https://github.com/udaydomadiya08/yt-transformer">GitHub</a> &middot; Free & Open Source &middot; No servers, runs on your machine</p>
   </footer>
-
-  <script>
-    function copyCode(el) {
-      const code = (el || document.querySelector('.copy-btn')).parentElement.querySelector('code');
-      const text = code.textContent.trim();
-      navigator.clipboard.writeText(text).then(() => {
-        el.textContent = 'Copied!';
-        setTimeout(() => el.textContent = 'Copy', 1500);
-      }).catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        ta.remove();
-        el.textContent = 'Copied!';
-        setTimeout(() => el.textContent = 'Copy', 1500);
-      });
-    }
-  </script>
 </body>
 </html>

@@ -39,7 +39,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: YTDownloader-${{ runner.os }}
+          name: YTTransformer-${{ runner.os }}
           path: |
             desktop-app/dist/*.dmg
             desktop-app/dist/*.exe
@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: YTDownloader-*
+          pattern: YTTransformer-*
           merge-multiple: true
 
       - uses: softprops/action-gh-release@v1
